@@ -1,9 +1,9 @@
 import streamlit as st
 import requests
 import random
-import time
+import base64
 
-# 1. Titel der Website
+# Titel der Website (Sofort offen ohne Passwort)
 st.title("Was wünschen Sie? 🚀")
 
 # Auswahlmenü in der Seitenleiste
@@ -32,21 +32,21 @@ if modus == "Chatten (Text)":
                 if res.status_code == 200:
                     st.write(res.json()["choices"]["message"]["content"])
                 else:
-                    st.error("Fehler bei der Text-Anfrage. Bitte prüfe deine GROQ_API_KEY.")
+                    st.error("Fehler bei der Text-Anfrage. Bitte prüfe deine GROQ_API_KEY in den Secrets.")
             except Exception as e:
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (PRODIA SDXL - 100% FREI VON POLLINATIONS)
+# BILDGENERATOR (HUGGING FACE SDXL - STABIL & REIN)
 # ==========================================
 elif modus == "Bild generieren":
-    st.subheader("📸 Wasserzeichen-freier Premium Bild-Designer")
+    st.subheader("📸 Fotorealistischer Premium Bild-Designer")
     prompt = st.text_input("Was soll auf dem Bild sein? (Eingabe auf Deutsch erlaubt):")
     
     if st.button("Bild in Sekunden zeichnen") and prompt:
-        with st.spinner("Profi-Netzwerk zeichnet Ihr sauberes Bild..."):
+        with st.spinner("Offizieller Stabilitäts-Server zeichnet Ihr Bild..."):
             try:
-                # 1. Deutsche Eingabe automatisch via Groq übersetzen (Verhindert Fehler)
+                # 1. Deutsche Eingabe automatisch via Groq übersetzen (Umlaut-Schutz)
                 headers_groq = {
                     "Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}",
                     "Content-Type": "application/json"
@@ -61,47 +61,33 @@ elif modus == "Bild generieren":
                 # Qualitäts-Booster für gestochen scharfen Fotorealismus ohne Logos
                 premium_prompt = f"{english_prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, clean frame, no watermark, no text, no logo"
                 
-                zufalls_seed = random.randint(1, 99999999)
+                # 2. Direkter Zugriff auf die stabile, freie Standard-Inferenz von Hugging Face
+                # Stable Diffusion XL erzeugt standardmäßig KEINE Logos!
+                API_URL = "https://huggingface.co"
                 
-                # Wir senden ein reines JSON-Paket an Prodia. Kein Zusammenkleben von URL-Texten mehr möglich!
-                api_base_url = "https://prodia.com"
-                headers_api = {
-                    "X-Prodia-Key": "00000000-0000-0000-0000-000000000000",
-                    "Content-Type": "application/json"
-                }
-                payload_api = {
-                    "prompt": premium_prompt,
-                    "model": "sdxl_lightning.safetensors",
-                    "seed": zufalls_seed
-                }
+                # Senden der Anfrage. Wir erwarten direkt die binären Bilddaten zurück
+                img_res = requests.post(API_URL, json={"inputs": premium_prompt}, timeout=30)
                 
-                response = requests.post(api_base_url, json=payload_api, headers=headers_api, timeout=20)
-                
-                if response.status_code == 200:
-                    job_id = response.json()["job"]
-                    status_url = f"https://prodia.com{job_id}"
+                if img_res.status_code == 200 and len(img_res.content) > 1000:
+                    # Wandelt das Bild in einen unblockierbaren Base64-Datenstream um
+                    encoded_image = base64.b64encode(img_res.content).decode()
                     
-                    # Warten bis das Bild fertig berechnet ist
-                    for _ in range(15):
-                        time.sleep(1)
-                        status_res = requests.get(status_url, headers=headers_api)
-                        if status_res.json()["status"] == "succeeded":
-                            image_url = status_res.json()["imageUrl"]
-                            break
+                    # 3. Direktanzeige im Browser (HTML5)
+                    html_code = f"""
+                    <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
+                        <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);" />
+                    </div>
+                    """
+                    st.markdown(html_code, unsafe_allow_html=True)
                     
-                    # Bild herunterladen und direkt anzeigen
-                    img_data = requests.get(image_url).content
-                    st.image(img_data, use_container_width=True)
-                    
-                    # Offizieller Streamlit Download-Button
+                    # 4. Offizieller Streamlit Download-Button direkt darunter
                     st.download_button(
                         label="📥 Bild in voller Qualität herunterladen",
-                        data=img_data,
-                        file_name=f"ki_studio_{zufalls_seed}.jpg",
+                        data=img_res.content,
+                        file_name=f"ki_studio_{random.randint(1, 99999)}.jpg",
                         mime="image/jpeg"
                     )
                 else:
-                    st.error("Der Bild-Server meldet eine Verzögerung. Bitte versuche es noch einmal.")
-                    
+                    st.error("Der Bild-Server bereitet die Infrastruktur vor oder ist ausgelastet. Bitte klicke in 5 Sekunden noch einmal.")
             except Exception as e:
                 st.error(f"Systemfehler: {e}")
