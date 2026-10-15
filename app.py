@@ -1,4 +1,5 @@
-import streamlit as st
+
+     import streamlit as st
 import requests
 import urllib.parse
 import random
@@ -25,9 +26,13 @@ if password == "DeinSicheresPasswort123":
         if st.button("Antwort generieren") and user_input:
             with st.spinner("Ich denke nach..."):
                 try:
-                    headers = {"Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}"}
+                    headers = {
+                        "Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}",
+                        "Content-Type": "application/json"
+                    }
                     payload = {
-                        "model": "llama3-8b-8192",
+                        # Nutzen das stabilste und aktuellste Standardmodell
+                        "model": "llama-3-8b-8192", 
                         "messages": [{"role": "user", "content": user_input}]
                     }
                     res = requests.post("https://groq.com", json=payload, headers=headers)
@@ -35,9 +40,10 @@ if password == "DeinSicheresPasswort123":
                     if res.status_code == 200:
                         st.write(res.json()["choices"]["message"]["content"])
                     else:
-                        st.error("Fehler beim Text-Gehirn. Bitte prüfe deine Streamlit Secrets (GROQ_API_KEY).")
-                except Exception:
-                    st.error("Verbindung zum Text-Server fehlgeschlagen.")
+                        # Zeigt dir jetzt die ECHTE Fehlermeldung von Groq an!
+                        st.error(f"Fehler von Groq (Code {res.status_code}): {res.text}")
+                except Exception as e:
+                    st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
     # ==========================================
     # BILDGENERATOR (PERFEKTE HTML-METHODE OHNE WASSERZEICHEN)
@@ -48,17 +54,10 @@ if password == "DeinSicheresPasswort123":
         
         if st.button("Bild zeichnen") and prompt:
             with st.spinner("Künstliche Intelligenz zeichnet Ihr Bild..."):
-                # Macht den Text internettauglich
                 safe_prompt = urllib.parse.quote(prompt)
-                
-                # Erzeugt einen zufälligen Code, damit das Bild neu geladen wird
                 zufalls_seed = random.randint(1, 999999)
-                
-                # Der direkte Link zum Bild ohne Logos und Wasserzeichen
                 image_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&nologo=true&no-watermark=true&seed={zufalls_seed}"
                 
-                # DER TRICK: Wir betten das Bild als pures HTML-Code-Element ein.
-                # Das funktioniert immer und umgeht alle Streamlit-Lade-Fehler!
                 html_code = f"""
                 <div style="text-align: center; margin-top: 20px;">
                     <img src="{image_url}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);" />
@@ -67,6 +66,5 @@ if password == "DeinSicheresPasswort123":
                 """
                 st.markdown(html_code, unsafe_allow_html=True)
 
-# Wenn das Passwort falsch oder leer ist
 else:
     st.warning("Bitte geben Sie das richtige Passwort in der linken Seitenleiste ein, um die KI freizuschalten.")
