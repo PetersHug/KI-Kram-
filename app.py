@@ -1,9 +1,12 @@
 import streamlit as st
 import requests
-import base64
 import random
+import json
 
-# Titel der Website (Sofort offen ohne Passwort)
+# App-Konfiguration für maximale Geschwindigkeit
+st.set_page_config(page_title="KI-Zentrale", layout="centered")
+
+# Der saubere Wunsch-Titel
 st.title("Was wünschen Sie? 🚀")
 
 # Auswahlmenü in der Seitenleiste
@@ -32,21 +35,21 @@ if modus == "Chatten (Text)":
                 if res.status_code == 200:
                     st.write(res.json()["choices"]["message"]["content"])
                 else:
-                    st.error("Fehler bei der Text-Anfrage. Bitte prüfe deine GROQ_API_KEY.")
+                    st.error("Fehler bei der Text-Anfrage. Bitte prüfe deine GROQ_API_KEY in den Secrets.")
             except Exception as e:
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (HUGGING FACE FLUX - UNZERSTÖRBAR & REIN)
+# BILDGENERATOR (SCHNELL, UNBLOCKIERBAR & LOGOFREI)
 # ==========================================
 elif modus == "Bild generieren":
-    st.subheader("📸 Fotorealistischer FLUX Bild-Designer")
+    st.subheader("⚡ Blitzschneller Premium Bild-Designer")
     prompt = st.text_input("Was soll auf dem Bild sein? (Eingabe auf Deutsch erlaubt):")
     
     if st.button("Bild in Sekunden zeichnen") and prompt:
-        with st.spinner("Premium FLUX-Modell generiert dein Bild..."):
+        with st.spinner("KI generiert Ihr sauberes Bild in Echtzeit..."):
             try:
-                # 1. Deutsche Eingabe automatisch via Groq übersetzen
+                # 1. Deutsche Eingabe automatisch via Groq übersetzen (Verhindert Fehler im Bild-Prompt)
                 headers_groq = {
                     "Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}",
                     "Content-Type": "application/json"
@@ -58,38 +61,48 @@ elif modus == "Bild generieren":
                 translation_res = requests.post("https://groq.com", json=translation_payload, headers=headers_groq)
                 english_prompt = translation_res.json()["choices"]["message"]["content"].strip() if translation_res.status_code == 200 else prompt
 
-                # Qualitäts-Booster für perfekten Fotorealismus ohne Wasserzeichen
-                premium_prompt = f"{english_prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, photorealistic, clean background, no text, no logo"
+                # Qualitäts-Booster für gestochen scharfen Fotorealismus ohne Logos
+                premium_prompt = f"{english_prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, clean frame, no watermark, no text, no logo"
                 
-                # 2. Direktzugriff auf den offiziellen, freien Hugging-Face-Server
-                API_URL = "https://huggingface.co"
+                # Mathematisch sichere URL-Codierung (Keine String-Verkettungsfehler!)
+                safe_prompt = requests.utils.quote(premium_prompt)
+                zufalls_seed = random.randint(1, 99999999)
                 
-                # Wir senden eine schlüssellose, anonyme Anfrage direkt an das Modell
-                res = requests.post(API_URL, json={"inputs": premium_prompt}, timeout=30)
+                # Der unblockierbare Bild-Pfad (Nutzt das High-End Flux-Modell)
+                # nologo=true und private=true schalten alle Wasserzeichen vollständig ab!
+                image_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&nologo=true&private=true&model=flux&seed={zufalls_seed}"
                 
-                if res.status_code == 200 and len(res.content) > 1000:
-                    # Das Bild wird als unblockierbarer Datenstrom verarbeitet
-                    encoded_image = base64.b64encode(res.content).decode()
+                # 2. DER ULTIMATIVE TRICK: Einbettung über eine HTML5/JavaScript-Komponente.
+                # Dein BROWSER lädt das Bild direkt. Der Streamlit-Server wird komplett umgangen!
+                # Enthält ein direktes Download-Skript, das das Bild als saubere .jpg speichert.
+                html_code = f"""
+                <div style="text-align: center; margin-top: 20px;">
+                    <img id="ki_image" src="{image_url}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);" />
+                    <br><br>
+                    <button onclick="downloadImage()" style="background-color: #ff4b4b; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; box-shadow: 0px 2px 5px rgba(0,0,0,0.2);">
+                        📥 Bild in voller Qualität herunterladen
+                    </button>
+                </div>
+
+                <script>
+                async function downloadImage() {{
+                    const image = document.getElementById('ki_image');
+                    const imageSrc = image.src;
+                    const response = await fetch(imageSrc);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'ki_studio_{zufalls_seed}.jpg';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                }}
+                </script>
+                """
+                # Betten das HTML-Element absolut unblockierbar in Streamlit ein
+                st.components.v1.html(html_code, height=650)
                     
-                    # Direktanzeige im Browser (HTML5)
-                    html_code = f"""
-                    <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
-                        <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);" />
-                    </div>
-                    """
-                    st.markdown(html_code, unsafe_allow_html=True)
-                    
-                    # Zufallszahl für den Dateinamen
-                    zufalls_seed = random.randint(1, 99999)
-                    
-                    # 3. Funktionierender Download-Button direkt darunter
-                    st.download_button(
-                        label="📥 Bild in voller Qualität herunterladen",
-                        data=res.content,
-                        file_name=f"ki_flux_{zufalls_seed}.jpg",
-                        mime="image/jpeg"
-                    )
-                else:
-                    st.error("Der Bild-Server ist im Moment ausgelastet. Bitte klicke noch einmal auf den Button.")
             except Exception as e:
-                st.error(f"Fehler bei der Bildgenerierung: {e}")
+                st.error(f"Systemfehler: {e}")
