@@ -4,14 +4,14 @@ import base64
 import random
 import urllib.parse
 
-# 1. Optimierter Titel der Website
+# 1. Titel der Website
 st.title("Was wünschen Sie? 🚀")
 
 # Auswahlmenü in der Seitenleiste
 modus = st.sidebar.radio("Funktion auswählen:", ["Chatten (Text)", "Bild generieren"])
 
 # ==========================================
-# CHATTEN (TEXT MODUS OPTIMIERT)
+# CHATTEN (TEXT MODUS)
 # ==========================================
 if modus == "Chatten (Text)":
     st.subheader("🤖 Text-Assistent")
@@ -38,7 +38,7 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (100% LOGO-FREI & OPTIMIERT)
+# BILDGENERATOR (REPARIERT & LOGO-FREI)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("📸 Fotorealistischer Premium Bild-Designer")
@@ -54,8 +54,10 @@ elif modus == "Bild generieren":
                 # Zufälliger Seed verhindert das Laden alter Bilder aus dem Browser-Cache
                 zufalls_seed = random.randint(1, 99999999)
                 
-                # DIE PERFEKTE ROUTE: Der flux-realism Pfad erzeugt standardmäßig KEINE Logos!
-                optimized_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&seed={zufalls_seed}&model=flux-realism&nologo=true&private=true"
+                # DER FIX: Absolut saubere URL-Struktur ohne Textfehler
+                # - model=flux liefert echten Fotorealismus
+                # - nologo=true schaltet alle Logos ab
+                optimized_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&seed={zufalls_seed}&model=flux&nologo=true&private=true"
                 
                 # Server lädt das Bild stabil im Hintergrund herunter
                 img_response = requests.get(optimized_url, timeout=30)
@@ -80,7 +82,7 @@ elif modus == "Bild generieren":
                         mime="image/jpeg"
                     )
                 else:
-                    st.error("Der Bild-Server ist im Moment überlastet. Bitte versuche es noch einmal.")
+                    st.error(f"Der Bild-Server meldet einen Fehler (Code {img_response.status_code}). Bitte versuche es noch einmal.")
                     
             except Exception as e:
                 st.error(f"Fehler bei der Bildübertragung: {e}")
