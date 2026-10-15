@@ -6,7 +6,7 @@ st.title("Meine All-in-One KI 🚀")
 
 # 1. Passwort-Schutz (Nur du hast Zugriff)
 password = st.sidebar.text_input("Admin-Passwort", type="password")
-if password == "DeinSicheresPasswort123":
+if password == "c434c$$§c$§$§Vc$%V&bv$V%54":
 
     # Modus auswählen: Text oder Bild
     modus = st.radio("Was möchtest du tun?", ["Chatten (Text)", "Bild generieren"])
