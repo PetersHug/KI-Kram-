@@ -2,7 +2,7 @@
 import streamlit as st
 import requests
 
-st.title("Meine All-in-One KI 🚀")
+st.title("Was kann ich für Sie tun")
 
 # 1. Passwort-Schutz (Nur du hast Zugriff)
 password = st.sidebar.text_input("Admin-Passwort", type="password")
