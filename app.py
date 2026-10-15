@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import urllib.parse
 import random
-import base64
 
 # Titel der Website
 st.title("Was kann ich für Sie tun? 🚀")
@@ -44,42 +43,27 @@ if password == "DeinSicheresPasswort123":
                     st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
     # ==========================================
-    # BILDGENERATOR (AUSFALLSICHERE BASE64-METHODE)
+    # BILDGENERATOR (PREMIUM FLUX - WASSERZEICHEN-FREI)
     # ==========================================
     elif modus == "Bild generieren":
-        st.subheader("🎨 Bild-Designer")
+        st.subheader("🎨 Premium Bild-Designer")
         prompt = st.text_input("Beschreiben Sie Ihr Wunschbild (Englisch empfohlen):")
         
         if st.button("Bild zeichnen") and prompt:
-            with st.spinner("Künstliche Intelligenz zeichnet Ihr Bild..."):
-                try:
-                    # Macht den Text internettauglich
-                    safe_prompt = urllib.parse.quote(prompt)
-                    zufalls_seed = random.randint(1, 999999)
-                    
-                    # Offizielle API-URL ohne Logos/Wasserzeichen
-                    image_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true&no-watermark=true&seed={zufalls_seed}"
-                    
-                    # 1. Bild sicher im Hintergrund vom Streamlit-Server anfordern
-                    img_response = requests.get(image_url, timeout=30)
-                    
-                    if img_response.status_code == 200:
-                        # 2. Das Bild in Base64-Text umwandeln (macht es immun gegen Browser-Blockaden)
-                        encoded_image = base64.b64encode(img_response.content).decode()
-                        
-                        # 3. Das Bild als Daten-Stream direkt in das HTML einbetten
-                        html_code = f"""
-                        <div style="text-align: center; margin-top: 20px;">
-                            <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);" />
-                            <p style="color: gray; font-size: 14px; margin-top: 5px;">Generiert für: "{prompt}"</p>
-                        </div>
-                        """
-                        st.markdown(html_code, unsafe_allow_html=True)
-                    else:
-                        st.error("Der Bild-Server liefert gerade keine Daten. Bitte versuche es gleich noch einmal.")
-                        
-                except Exception as e:
-                    st.error(f"Fehler beim Laden des Bildes: {e}")
+            with st.spinner("Künstliche Intelligenz generiert Ihr Bild..."):
+                # Macht den Text internettauglich
+                safe_prompt = urllib.parse.quote(prompt)
+                
+                # Erzeugt einen zufälligen Code für ein frisches Bild
+                zufalls_seed = random.randint(1, 99999999)
+                
+                # DER FIX: Wir nutzen das extrem starke 'flux' Modell.
+                # 'nologo=true' und 'private=true' garantieren ein sauberes Bild ohne Wasserzeichen!
+                image_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true&private=true&model=flux&seed={zufalls_seed}"
+                
+                # Übermittlung direkt an das Browserfenster des Nutzers (Keine Serverblockaden möglich!)
+                st.image(image_url, caption=f"Generiert für: '{prompt}'")
 
+# Wenn das Passwort falsch oder leer ist
 else:
     st.warning("Bitte geben Sie das richtige Passwort in der linken Seitenleiste ein, um die KI freizuschalten.")
