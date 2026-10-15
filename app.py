@@ -37,28 +37,38 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (REINE CLIENT-BROWSER-METHODE)
+# BILDGENERATOR (AUSFALLSICHERE DOWNLOAD-METHODE)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("📸 Fotorealistischer 4K Bild-Designer")
     prompt = st.text_input("Was soll auf dem Bild sein? (Englisch empfohlen):")
     
     if st.button("Bild in 4K zeichnen") and prompt:
-        # Automatische Profi-Erweiterung für 4K-Fotorealismus
-        premium_prompt = f"{prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, 35mm lens, photorealistic, no logo, no watermark"
-        safe_prompt = urllib.parse.quote(premium_prompt)
-        
-        # Zufalls-Seed gegen Cache-Probleme
-        zufalls_seed = random.randint(1, 99999999)
-        
-        # Wir nutzen die freie Schnittstelle, übergeben sie aber als reines HTML-Bild-Element.
-        # Das zwingt DEINEN BROWSER (nicht den Streamlit-Server), das Bild direkt zu laden.
-        image_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&nologo=true&private=true&model=flux&seed={zufalls_seed}"
-        
-        # Reines HTML/Markdown-Injektion. Das umgeht die Server-Sperre (401) vollständig!
-        st.markdown(f"""
-        <div style="text-align: center; margin-top: 20px;">
-            <img src="{image_url}" style="width:100%; max-width:600px; border-radius:10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.2);" />
-            <p style="color: gray; font-size: 14px; margin-top: 8px;">Klicke mit der rechten Maustaste auf das Bild, um es zu speichern.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        with st.spinner("KI generiert Ihr Bild im Hintergrund..."):
+            try:
+                # Automatische Erweiterung für puren Fotorealismus
+                premium_prompt = f"{prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, photorealistic"
+                safe_prompt = urllib.parse.quote(premium_prompt)
+                zufalls_seed = random.randint(1, 99999999)
+                
+                # Der stabile API-Pfad (Liefert ein sauberes Bild ohne Wasserzeichen)
+                image_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true&private=true&model=flux&seed={zufalls_seed}"
+                
+                # Der Server holt sich die Bild-Rohdaten direkt von der KI
+                response = requests.get(image_url, timeout=30)
+                
+                if response.status_code == 200:
+                    st.success("🎉 Bild erfolgreich im Hintergrund gezeichnet!")
+                    
+                    # Ein nativer Streamlit-Button, der niemals vom Browser blockiert werden kann
+                    st.download_button(
+                        label="📥 Klicke hier, um dein fertiges 4K-Bild herunterzuladen",
+                        data=response.content,
+                        file_name=f"ki_bild_{zufalls_seed}.jpg",
+                        mime="image/jpeg"
+                    )
+                    st.info(f"Das Bild wurde exakt für das Motiv '{prompt}' erstellt.")
+                else:
+                    st.error("Der Bild-Server benötigt im Moment zu lange. Bitte klicke noch einmal auf den Button.")
+            except Exception as e:
+                st.error(f"Fehler bei der Bildübertragung: {e}")
