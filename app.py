@@ -1,9 +1,9 @@
-
 import streamlit as st
 import requests
+import base64
 import random
 
-# Titel der Website
+# Titel der Website (Sofort offen ohne Passwort)
 st.title("Was wünschen Sie? 🚀")
 
 # Auswahlmenü in der Seitenleiste
@@ -37,14 +37,14 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (PRODIAS SDXL - BLITZSCHNELL & REIN)
+# BILDGENERATOR (HUGGING FACE FLUX - UNZERSTÖRBAR & REIN)
 # ==========================================
 elif modus == "Bild generieren":
-    st.subheader("📸 Fotorealistischer Premium Bild-Designer")
+    st.subheader("📸 Fotorealistischer FLUX Bild-Designer")
     prompt = st.text_input("Was soll auf dem Bild sein? (Eingabe auf Deutsch erlaubt):")
     
     if st.button("Bild in Sekunden zeichnen") and prompt:
-        with st.spinner("KI generiert Ihr sauberes Bild..."):
+        with st.spinner("Premium FLUX-Modell generiert dein Bild..."):
             try:
                 # 1. Deutsche Eingabe automatisch via Groq übersetzen
                 headers_groq = {
@@ -58,57 +58,38 @@ elif modus == "Bild generieren":
                 translation_res = requests.post("https://groq.com", json=translation_payload, headers=headers_groq)
                 english_prompt = translation_res.json()["choices"]["message"]["content"].strip() if translation_res.status_code == 200 else prompt
 
-                # Qualitäts-Booster für gestochen scharfen Fotorealismus ohne Logos
-                premium_prompt = f"{english_prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, clean frame, no watermark, no text, no logo"
+                # Qualitäts-Booster für perfekten Fotorealismus ohne Wasserzeichen
+                premium_prompt = f"{english_prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, photorealistic, clean background, no text, no logo"
                 
-                # Absolut sichere Trennung: Wir nutzen ein Dictionary für die Parameter!
-                # Python übergibt dies isoliert an die API. Ein Verschmelzen von Worten ist unmöglich.
-                zufalls_seed = random.randint(1, 99999999)
-                api_base_url = "https://prodia.com"
+                # 2. Direktzugriff auf den offiziellen, freien Hugging-Face-Server
+                API_URL = "https://huggingface.co"
                 
-                headers_api = {
-                    "X-Prodia-Key": "00000000-0000-0000-0000-000000000000",
-                    "Content-Type": "application/json"
-                }
+                # Wir senden eine schlüssellose, anonyme Anfrage direkt an das Modell
+                res = requests.post(API_URL, json={"inputs": premium_prompt}, timeout=30)
                 
-                payload_api = {
-                    "prompt": premium_prompt,
-                    "model": "sdxl_lightning.safetensors",
-                    "seed": zufalls_seed
-                }
-                
-                # Wir stoßen die Generierung über ein sicheres JSON-Paket an
-                response = requests.post(api_base_url, json=payload_api, headers=headers_api, timeout=20)
-                
-                if response.status_code == 200:
-                    # Prodia liefert eine direkte, saubere Bild-URL zurück
-                    job_id = response.json()["job"]
-                    status_url = f"https://prodia.com{job_id}"
+                if res.status_code == 200 and len(res.content) > 1000:
+                    # Das Bild wird als unblockierbarer Datenstrom verarbeitet
+                    encoded_image = base64.b64encode(res.content).decode()
                     
-                    # Kurz warten, bis das Bild fertig berechnet ist
-                    import time
-                    for _ in range(10):
-                        time.sleep(1)
-                        status_res = requests.get(status_url, headers=headers_api)
-                        if status_res.json()["status"] == "succeeded":
-                            image_url = status_res.json()["imageUrl"]
-                            break
+                    # Direktanzeige im Browser (HTML5)
+                    html_code = f"""
+                    <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
+                        <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);" />
+                    </div>
+                    """
+                    st.markdown(html_code, unsafe_allow_html=True)
                     
-                    # Bild-Rohdaten für Anzeige und unblockierbaren Download herunterladen
-                    img_data = requests.get(image_url).content
-                    
-                    # 2. Direktanzeige über Streamlits eigene, sichere Komponente
-                    st.image(img_data, use_container_width=True)
+                    # Zufallszahl für den Dateinamen
+                    zufalls_seed = random.randint(1, 99999)
                     
                     # 3. Funktionierender Download-Button direkt darunter
                     st.download_button(
                         label="📥 Bild in voller Qualität herunterladen",
-                        data=img_data,
-                        file_name=f"ki_studio_{zufalls_seed}.jpg",
+                        data=res.content,
+                        file_name=f"ki_flux_{zufalls_seed}.jpg",
                         mime="image/jpeg"
                     )
                 else:
-                    st.error("Der Bild-Server meldet eine Verzögerung. Bitte versuche es noch einmal.")
-                    
+                    st.error("Der Bild-Server ist im Moment ausgelastet. Bitte klicke noch einmal auf den Button.")
             except Exception as e:
-                st.error(f"Systemfehler: {e}")
+                st.error(f"Fehler bei der Bildgenerierung: {e}")
