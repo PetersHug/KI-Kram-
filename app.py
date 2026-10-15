@@ -40,25 +40,32 @@ if password == "DeinSicheresPasswort123":
                     st.error("Verbindung zum Text-Server fehlgeschlagen.")
 
     # ==========================================
-    # BILDGENERATOR (WASSERZEICHEN-FREI & REAKTIV)
+    # BILDGENERATOR (PERFEKTE HTML-METHODE OHNE WASSERZEICHEN)
     # ==========================================
     elif modus == "Bild generieren":
-        st.subheader("🎨 Bild-Designer (Wasserzeichen-frei)")
+        st.subheader("🎨 Bild-Designer")
         prompt = st.text_input("Beschreiben Sie Ihr Wunschbild (Englisch empfohlen):")
         
         if st.button("Bild zeichnen") and prompt:
-            with st.spinner("Künstliche Intelligenz zeichnet..."):
+            with st.spinner("Künstliche Intelligenz zeichnet Ihr Bild..."):
                 # Macht den Text internettauglich
                 safe_prompt = urllib.parse.quote(prompt)
                 
-                # Generiert eine Zufallszahl (Seed), damit Streamlit das Bild zwingend neu lädt
+                # Erzeugt einen zufälligen Code, damit das Bild neu geladen wird
                 zufalls_seed = random.randint(1, 999999)
                 
-                # WICHTIG: Die Parameter "nologo=true" und "no-watermark" schalten alle Logos ab!
+                # Der direkte Link zum Bild ohne Logos und Wasserzeichen
                 image_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&nologo=true&no-watermark=true&seed={zufalls_seed}"
                 
-                # Zeigt das saubere Bild direkt auf der Seite an
-                st.image(image_url, caption=f"Dein fertiges Bild für: '{prompt}'")
+                # DER TRICK: Wir betten das Bild als pures HTML-Code-Element ein.
+                # Das funktioniert immer und umgeht alle Streamlit-Lade-Fehler!
+                html_code = f"""
+                <div style="text-align: center; margin-top: 20px;">
+                    <img src="{image_url}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);" />
+                    <p style="color: gray; font-size: 14px; margin-top: 5px;">Generiert für: "{prompt}"</p>
+                </div>
+                """
+                st.markdown(html_code, unsafe_allow_html=True)
 
 # Wenn das Passwort falsch oder leer ist
 else:
