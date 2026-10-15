@@ -2,8 +2,9 @@ import streamlit as st
 import requests
 import urllib.parse
 import random
+import base64
 
-# Titel der Website
+# Titel der Website (Vollständig passwortfrei)
 st.title("Was wünschen Sie? 🚀")
 
 # Auswahlmenü in der Seitenleiste
@@ -37,38 +38,53 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (AUSFALLSICHERE DOWNLOAD-METHODE)
+# BILDGENERATOR (DIREKT-ANZEIGE & DOWNLOAD)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("📸 Fotorealistischer 4K Bild-Designer")
     prompt = st.text_input("Was soll auf dem Bild sein? (Englisch empfohlen):")
     
     if st.button("Bild in 4K zeichnen") and prompt:
-        with st.spinner("KI generiert Ihr Bild im Hintergrund..."):
+        with st.spinner("KI generiert Ihr fotorealistisches Bild..."):
             try:
-                # Automatische Erweiterung für puren Fotorealismus
+                # Automatische Erweiterung für 4K-Qualität und echten Fotorealismus
                 premium_prompt = f"{prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, photorealistic"
                 safe_prompt = urllib.parse.quote(premium_prompt)
+                
+                # Zufalls-Seed verhindert das Laden alter Bilder aus dem Zwischenspeicher
                 zufalls_seed = random.randint(1, 99999999)
                 
-                # Der stabile API-Pfad (Liefert ein sauberes Bild ohne Wasserzeichen)
+                # Die freie, unzensierte Bild-Schnittstelle ohne Wasserzeichen-Zwang
+                # nologo=true schaltet das Pollinations-Logo in der Ecke vollständig ab!
                 image_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true&private=true&model=flux&seed={zufalls_seed}"
                 
-                # Der Server holt sich die Bild-Rohdaten direkt von der KI
-                response = requests.get(image_url, timeout=30)
+                # 1. Server lädt das Bild im Hintergrund als reinen Datenstrom herunter
+                img_response = requests.get(image_url, timeout=30)
                 
-                if response.status_code == 200:
-                    st.success("🎉 Bild erfolgreich im Hintergrund gezeichnet!")
+                if img_response.status_code == 200:
+                    # 2. Wandelt das Bild in Base64-Text um (macht es immun gegen Browser-Blockaden!)
+                    encoded_image = base64.b64encode(img_response.content).decode()
                     
-                    # Ein nativer Streamlit-Button, der niemals vom Browser blockiert werden kann
+                    # 3. Direktanzeige im Browser via HTML
+                    html_code = f"""
+                    <div style="text-align: center; margin-top: 20px;">
+                        <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.2);" />
+                    </div>
+                    """
+                    st.markdown(html_code, unsafe_allow_html=True)
+                    
+                    # Platz zwischen Bild und Button schaffen
+                    st.write("")
+                    
+                    # 4. Offizieller Streamlit-Download-Button direkt unter dem Bild
                     st.download_button(
-                        label="📥 Klicke hier, um dein fertiges 4K-Bild herunterzuladen",
-                        data=response.content,
+                        label="📥 Bild in voller 4K-Qualität herunterladen",
+                        data=img_response.content,
                         file_name=f"ki_bild_{zufalls_seed}.jpg",
                         mime="image/jpeg"
                     )
-                    st.info(f"Das Bild wurde exakt für das Motiv '{prompt}' erstellt.")
                 else:
-                    st.error("Der Bild-Server benötigt im Moment zu lange. Bitte klicke noch einmal auf den Button.")
+                    st.error("Der Bild-Server liefert gerade keine Daten. Bitte klicke noch einmal auf den Button.")
+                    
             except Exception as e:
                 st.error(f"Fehler bei der Bildübertragung: {e}")
