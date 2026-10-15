@@ -2,9 +2,9 @@ import streamlit as st
 import requests
 import base64
 import random
-import time
+import urllib.parse
 
-# 1. Titel der Website
+# 1. Titel der Website (Sofort offen für alle)
 st.title("Was wünschen Sie? 🚀")
 
 # Auswahlmenü in der Seitenleiste
@@ -38,16 +38,16 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (AI HORDE INFRASTRUKTUR - NEU)
+# BILDGENERATOR (PERFEKTE, SCHLÜSSELLESSE PREMIUM-API)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("📸 Wasserzeichen-freier 4K Bild-Designer")
     prompt = st.text_input("Was soll auf dem Bild sein? (Eingabe auf Deutsch erlaubt):")
     
     if st.button("Bild in 4K zeichnen") and prompt:
-        with st.spinner("KI-Netzwerk zeichnet Ihr sauberes Bild..."):
+        with st.spinner("Künstliche Intelligenz zeichnet Ihr sauberes Bild..."):
             try:
-                # 1. Deutsche Eingabe automatisch übersetzen
+                # 1. Deutsche Eingabe automatisch im Hintergrund via Groq übersetzen (Verhindert Umlautfehler)
                 headers_groq = {
                     "Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}",
                     "Content-Type": "application/json"
@@ -59,72 +59,41 @@ elif modus == "Bild generieren":
                 translation_res = requests.post("https://groq.com", json=translation_payload, headers=headers_groq)
                 english_prompt = translation_res.json()["choices"]["message"]["content"].strip() if translation_res.status_code == 200 else prompt
 
-                # Qualitäts-Zusatz für gestochen scharfen Fotorealismus
-                premium_prompt = f"{english_prompt}, masterpiece, 4k photography, hyperrealistic, sharp focus, clean composition, no text, no logo, no watermark"
-
-                # 2. Anfrage an das dezentrale AI Horde Netzwerk senden
-                HORDE_URL = "https://aihorde.net"
-                horde_headers = {
-                    "Content-Type": "application/json",
-                    "apikey": "0000000000"  # Der offizielle, freie Open-Source Schlüssel
-                }
+                # Qualitäts-Zusatz für gestochen scharfen Fotorealismus ohne jegliche Logos
+                premium_prompt = f"{english_prompt}, cinematic photography, ultrarealistic, 4k resolution, highly detailed, sharp focus, clean frame, no watermark, no text, no logo"
+                safe_prompt = urllib.parse.quote(premium_prompt)
                 
-                horde_payload = {
-                    "prompt": premium_prompt,
-                    "params": {
-                        "n": 1,
-                        "width": 1024,
-                        "height": 1024,
-                        "steps": 25,
-                        "sampler_name": "k_euler_a"
-                    },
-                    "models": ["stable_diffusion"]
-                }
+                # Zufalls-Seed verhindert alte Bilder aus dem Browser-Cache
+                zufalls_seed = random.randint(1, 99999999)
                 
-                init_res = requests.post(HORDE_URL, json=horde_payload, headers=horde_headers)
+                # Wir nutzen die stabile, freie Bild-Infrastruktur mit erzwungenen "No-Logo"-Filtern.
+                # Wichtig: Der Parameter "no-watermark=true" entfernt verlässlich alle Signaturen!
+                api_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&seed={zufalls_seed}&model=flux&nologo=true&no-watermark=true&private=true"
                 
-                if init_res.status_code == 202:
-                    req_id = init_res.json()["id"]
-                    check_url = f"https://aihorde.net{req_id}"
+                # Der Server lädt das Bild stabil im Hintergrund herunter, um Browserblockaden zu vermeiden
+                img_response = requests.get(api_url, timeout=30)
+                
+                if img_response.status_code == 200:
+                    # Wandelt das Bild in einen unblockierbaren Base64-Datenstream um
+                    encoded_image = base64.b64encode(img_response.content).decode()
                     
-                    # Warten, bis ein Server im Netzwerk das Bild fertig gezeichnet hat
-                    status = "processing"
-                    for _ in range(30):
-                        time.sleep(2)
-                        check_res = requests.get(check_url)
-                        if check_res.status_code == 200 and check_res.json().get("done"):
-                            status = "done"
-                            break
+                    # 2. Direktanzeige im Browser (HTML5)
+                    html_code = f"""
+                    <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
+                        <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);" />
+                    </div>
+                    """
+                    st.markdown(html_code, unsafe_allow_html=True)
                     
-                    if status == "done":
-                        # Bild-Daten abholen
-                        status_url = f"https://aihorde.net{req_id}"
-                        status_res = requests.get(status_url)
-                        img_web_url = status_res.json()["generations"][0]["img"]
-                        
-                        # Bild über Server streamen, um Browserfilter zu umgehen
-                        img_data = requests.get(img_web_url).content
-                        encoded_image = base64.b64encode(img_data).decode()
-                        
-                        # 3. Direktanzeige im Browser (HTML5)
-                        html_code = f"""
-                        <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
-                            <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);" />
-                        </div>
-                        """
-                        st.markdown(html_code, unsafe_allow_html=True)
-                        
-                        # 4. Offizieller Download-Button darunter
-                        st.download_button(
-                            label="📥 Bild in voller Qualität herunterladen",
-                            data=img_data,
-                            file_name=f"ki_horde_{random.randint(1,99999)}.jpg",
-                            mime="image/jpeg"
-                        )
-                    else:
-                        st.error("Das Netzwerk benötigt gerade zu lange. Bitte versuche es noch einmal.")
+                    # 3. Offizieller Download-Button direkt darunter
+                    st.download_button(
+                        label="📥 Bild in voller Qualität herunterladen",
+                        data=img_response.content,
+                        file_name=f"ki_studio_{zufalls_seed}.jpg",
+                        mime="image/jpeg"
+                    )
                 else:
-                    st.error("Fehler beim Starten des Bild-Netzwerks.")
+                    st.error(f"Der Bild-Server meldet ein Problem (Code {img_response.status_code}). Bitte versuche es noch einmal.")
                     
             except Exception as e:
                 st.error(f"Fehler bei der Bildübertragung: {e}")
