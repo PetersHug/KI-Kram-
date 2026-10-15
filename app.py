@@ -22,18 +22,23 @@ if password == "DeinSicheresPasswort123":
                     "messages": [{"role": "user", "content": user_input}]
                 }
                 res = requests.post("https://groq.com", json=payload, headers=headers)
-                st.write(res.json()["choices"]["message"]["content"])
-
-    # --- BILD MODUS ---
-    elif modus == "Bild generieren":
-        prompt = st.text_input("Was soll auf dem Bild sein? (Englisch empfohlen):")
-        if st.button("Generieren") and prompt:
-            with st.spinner("Bild wird gemalt..."):
-                headers = {"Authorization": f"Bearer {st.secrets['HF_API_KEY']}"}
-                res = requests.post("https://huggingface.co", headers=headers, json={"inputs": prompt})
                 if res.status_code == 200:
-                    st.image(res.content)
+                    st.write(res.json()["choices"]["message"]["content"])
                 else:
-                    st.error("Fehler bei der Bildgenerierung.")
+                    st.error("Fehler beim Text-Gehirn. Bitte prüfe deinen GROQ_API_KEY.")
+
+    # --- BILD MODUS (Ohne Anmeldung!) ---
+    elif modus == "Bild generieren":
+        prompt = st.text_input("Was soll auf dem Bild sein? (Englisch klappt am besten):")
+        if st.button("Generieren") and prompt:
+            with st.spinner("Bild wird ohne Anmeldung generiert..."):
+                # Macht den Text internettauglich (ersetzt Leerzeichen durch %20)
+                formatted_prompt = prompt.replace(" ", "%20")
+                
+                # Nutzt die kostenlose, freie Bild-URL von Pollinations
+                image_url = f"https://pollinations.ai{formatted_prompt}?width=1024&height=1024&nologo=true"
+                
+                # Zeigt das Bild direkt auf deiner Streamlit-Seite an
+                st.image(image_url, caption=f"Generiertes Bild für: {prompt}")
 else:
     st.warning("Bitte gib das richtige Admin-Passwort in der Seitenleiste ein.")
