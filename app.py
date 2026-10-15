@@ -3,7 +3,7 @@ import requests
 import urllib.parse
 import random
 
-# Der saubere Wunsch-Titel (Sofort offen für alle)
+# Titel der Website
 st.title("Was wünschen Sie? 🚀")
 
 # Auswahlmenü in der Seitenleiste
@@ -37,7 +37,7 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (FOTOREALISTISCH & LOGO-FREI)
+# BILDGENERATOR (OFFIZIELLE NEUE ENDPUNKT-METHODE)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("📸 Fotorealistischer 4K Bild-Designer")
@@ -46,15 +46,16 @@ elif modus == "Bild generieren":
     if st.button("Bild in 4K zeichnen") and prompt:
         with st.spinner("KI generiert Ihr fotorealistisches Bild..."):
             
-            # Automatische Erweiterung für echten Fotorealismus
+            # Automatische Erweiterung für puren Fotorealismus
             premium_prompt = f"{prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, 35mm lens, photorealistic"
             safe_prompt = urllib.parse.quote(premium_prompt)
             
             # Zufalls-Seed für ein frisches Bild bei jedem Klick
             zufalls_seed = random.randint(1, 99999999)
             
-            # Die perfekte Parameter-Kombination um Logos und Wasserzeichen abzustellen
-            image_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&nologo=true&private=true&enhance=true&model=flux&seed={zufalls_seed}"
+            # DER FIX: Nutzung der neuen, stabilen offiziellen Domain (gen.pollinations.ai)
+            # Diese liefert standardmäßig saubere Bilder ohne Logos oder Wasserzeichen aus.
+            image_url = f"https://gen.pollinations.ai/image/{safe_prompt}?model=flux&width=1024&height=1024&seed={zufalls_seed}&enhance=true"
             
-            # Direkte Ausgabe auf deiner Webseite
+            # Reicht die URL direkt an den Browser weiter (Funktioniert sofort!)
             st.image(image_url, caption=f"Generiert für: '{prompt}'")
