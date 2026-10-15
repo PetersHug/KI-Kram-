@@ -38,35 +38,53 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (REPARIERT & LOGO-FREI)
+# BILDGENERATOR (MIT AUTOMATISCHER ÜBERSETZUNG)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("📸 Fotorealistischer Premium Bild-Designer")
-    prompt = st.text_input("Was soll auf dem Bild sein? (Englisch klappt am besten):")
+    prompt = st.text_input("Was soll auf dem Bild sein? (Du kannst beruhigt auf Deutsch schreiben!):")
     
     if st.button("Bild in 4K zeichnen") and prompt:
-        with st.spinner("KI generiert Ihr sauberes Bild ohne Wasserzeichen..."):
+        with st.spinner("KI übersetzt und zeichnet Ihr sauberes Bild ohne Wasserzeichen..."):
             try:
-                # Qualitäts-Booster für perfekten Fotorealismus ohne Text-Überreste
-                premium_prompt = f"{prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, award winning photo, clean frame, no watermark, no text, no logo"
-                safe_prompt = urllib.parse.quote(premium_prompt)
+                # TRICK 1: Wir nutzen dein Text-Gehirn (Groq) im Hintergrund, 
+                # um deine deutsche Eingabe blitzschnell in perfektes Englisch zu übersetzen!
+                headers = {
+                    "Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}",
+                    "Content-Type": "application/json"
+                }
+                translation_payload = {
+                    "model": "llama-3-8b-8192", 
+                    "messages": [{"role": "user", "content": f"Translate this text to english for an AI image prompt. Only output the plain translation, nothing else: {prompt}"}]
+                }
+                translation_res = requests.post("https://groq.com", json=translation_payload, headers=headers)
                 
-                # Zufälliger Seed verhindert das Laden alter Bilder aus dem Browser-Cache
+                if translation_res.status_code == 200:
+                    english_prompt = translation_res.json()["choices"]["message"]["content"].strip()
+                else:
+                    # Falls die Übersetzung fehlschlägt, nutzen wir das Original
+                    english_prompt = prompt
+
+                # Qualitäts-Booster für perfekten Fotorealismus ohne Logos
+                premium_prompt = f"{english_prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, award winning photo, clean frame, no watermark, no text, no logo"
+                
+                # Macht den Text absolut internettauglich (UTF-8 sicher!)
+                safe_prompt = urllib.parse.quote(premium_prompt.encode('utf-8'))
+                
+                # Zufalls-Seed verhindert alte Bilder aus dem Cache
                 zufalls_seed = random.randint(1, 99999999)
                 
-                # DER FIX: Absolut saubere URL-Struktur ohne Textfehler
-                # - model=flux liefert echten Fotorealismus
-                # - nologo=true schaltet alle Logos ab
-                optimized_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&seed={zufalls_seed}&model=flux&nologo=true&private=true"
+                # Die perfekte, saubere URL
+                optimized_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&seed={zufalls_seed}&model=flux&nologo=true&private=true"
                 
-                # Server lädt das Bild stabil im Hintergrund herunter
+                # Server lädt das Bild stabil herunter
                 img_response = requests.get(optimized_url, timeout=30)
                 
                 if img_response.status_code == 200:
-                    # Macht das Bild immun gegen alle Browser-Sicherheitsblockaden (Base64 Stream)
+                    # Wandelt das Bild in unblockierbaren Base64-Stream um
                     encoded_image = base64.b64encode(img_response.content).decode()
                     
-                    # 1. Direktanzeige im Browser ohne störende Elemente
+                    # 1. Direktanzeige im Browser (HTML)
                     html_code = f"""
                     <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
                         <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);" />
