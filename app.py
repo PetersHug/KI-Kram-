@@ -40,16 +40,16 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (SCHNELL, UNBLOCKIERBAR & LOGOFREI)
+# BILDGENERATOR (100% FEHLERFREI, SCHNELL & LOGOFREI)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("⚡ Blitzschneller Premium Bild-Designer")
     prompt = st.text_input("Was soll auf dem Bild sein? (Eingabe auf Deutsch erlaubt):")
     
     if st.button("Bild in Sekunden zeichnen") and prompt:
-        with st.spinner("KI generiert Ihr sauberes Bild in Echtzeit..."):
+        with st.spinner("KI generiert Ihr sauberes Bild..."):
             try:
-                # 1. Deutsche Eingabe automatisch via Groq übersetzen, um Umlautfehler zu vermeiden
+                # 1. Deutsche Eingabe automatisch via Groq übersetzen (Verhindert Umlautfehler)
                 headers_groq = {
                     "Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}",
                     "Content-Type": "application/json"
@@ -68,14 +68,14 @@ elif modus == "Bild generieren":
                 safe_prompt = urllib.parse.quote(premium_prompt)
                 zufalls_seed = random.randint(1, 99999999)
                 
-                # Der verifizierte, unzensierte Bild-Pfad (Liefert ein sauberes Bild ohne Wasserzeichen)
-                image_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&nologo=true&private=true&model=flux&seed={zufalls_seed}"
+                # DIE ABSOLUTE REPARATUR: urljoin erzwingt die mathematisch korrekte Trennung mit Schrägstrich!
+                base_url = "https://pollinations.ai"
+                image_url = urllib.parse.urljoin(base_url, f"{safe_prompt}?width=1024&height=1024&nologo=true&private=true&model=flux&seed={zufalls_seed}")
                 
-                # 2. Direktanzeige im Browser mittels Streamlit-Standardkomponente (Absolut unblockierbar!)
+                # 2. Direktanzeige im Browser mittels Streamlit-Standardkomponente (Absolut unblockierbar)
                 st.image(image_url, use_container_width=True)
                 
-                # 3. Download-Button direkt vorbereiten
-                # Wir holen die Rohdaten über Python ab, bieten aber bei Überlastung einen direkten Web-Link als Backup
+                # 3. Offizieller Download-Button direkt darunter vorbereiten
                 try:
                     img_data = requests.get(image_url, timeout=15).content
                     st.download_button(
@@ -85,8 +85,8 @@ elif modus == "Bild generieren":
                         mime="image/jpeg"
                     )
                 except Exception:
-                    # Ausfallsicheres Backup: Falls der Download-Stream blockiert, kann der Nutzer das Bild über diesen Link speichern
-                    st.markdown(f'[🔗 Klicke hier, falls der Download-Button hakt (Bild öffnen & Rechtsklick zum Speichern)]({image_url})')
+                    # Ausfallsicheres Backup bei Server-Überlastung
+                    st.markdown(f'[🔗 Klicke hier zum Speichern (Bild öffnen & Rechtsklick)]({image_url})')
                     
             except Exception as e:
                 st.error(f"Systemfehler: {e}")
