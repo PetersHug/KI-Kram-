@@ -1,9 +1,8 @@
-
 import streamlit as st
 import requests
 import urllib.parse
 
-# 1. Neuer Wunsch-Titel der Website
+# 1. Titel der Website
 st.title("Was kann ich für Sie tun? 🚀")
 
 # 2. Passwort-Schutz in der Seitenleiste
@@ -40,31 +39,21 @@ if password == "DeinSicheresPasswort123":
                     st.error("Verbindung zum Text-Server fehlgeschlagen.")
 
     # ==========================================
-    # BILDGENERATOR (BILD MODUS)
+    # BILDGENERATOR (BILD MODUS - DIREKTLINK-METHODE)
     # ==========================================
     elif modus == "Bild generieren":
         st.subheader("🎨 Bild-Designer")
         prompt = st.text_input("Beschreiben Sie Ihr Wunschbild (Englisch empfohlen):")
         
         if st.button("Bild zeichnen") and prompt:
-            with st.spinner("Ich zeichne Ihr Bild im Hintergrund..."):
-                try:
-                    # Macht den Text absolut internet- und URL-sicher
-                    safe_prompt = urllib.parse.quote(prompt)
-                    
-                    # Generiert eine eindeutige URL für das Bild (ohne Anmeldung!)
-                    image_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&nologo=true"
-                    
-                    # Lädt das Bild im Hintergrund als echte Datei herunter, um Browser-Blockaden zu umgehen
-                    response = requests.get(image_url, timeout=20)
-                    
-                    if response.status_code == 200:
-                        # Zeigt die heruntergeladene Bilddatei direkt an
-                        st.image(response.content, caption=f"Dein generiertes Bild für: '{prompt}'")
-                    else:
-                        st.error("Der Bild-Server ist gerade überlastet. Bitte versuche es noch einmal.")
-                except Exception:
-                    st.error("Fehler beim Herunterladen des Bildes. Bitte erneut versuchen.")
+            # Erstellt die URL vollkommen sicher
+            safe_prompt = urllib.parse.quote(prompt)
+            # Nutzt die stabile, offizielle URL von Pollinations
+            image_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true"
+            
+            # Der Trick: Streamlit reicht die URL direkt an das Browserfenster weiter.
+            # Kein fehleranfälliges Herunterladen im Hintergrund mehr nötig!
+            st.image(image_url, caption=f"Dein generiertes Bild für: '{prompt}'")
 
 # Wenn das Passwort falsch oder leer ist
 else:
