@@ -1,10 +1,7 @@
+
 import streamlit as st
 import requests
-import base64
 import random
-
-# Performance-Konfiguration
-st.set_page_config(page_title="KI-Zentrale", layout="centered")
 
 # Titel der Website
 st.title("Was wünschen Sie? 🚀")
@@ -35,12 +32,12 @@ if modus == "Chatten (Text)":
                 if res.status_code == 200:
                     st.write(res.json()["choices"]["message"]["content"])
                 else:
-                    st.error(f"Fehler bei der Text-Anfrage. Bitte prüfe deine GROQ_API_KEY.")
+                    st.error("Fehler bei der Text-Anfrage. Bitte prüfe deine GROQ_API_KEY.")
             except Exception as e:
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (100% AUSFALLSICHER & REIN)
+# BILDGENERATOR (PRODIAS SDXL - BLITZSCHNELL & REIN)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("📸 Fotorealistischer Premium Bild-Designer")
@@ -49,7 +46,7 @@ elif modus == "Bild generieren":
     if st.button("Bild in Sekunden zeichnen") and prompt:
         with st.spinner("KI generiert Ihr sauberes Bild..."):
             try:
-                # 1. Deutsche Eingabe automatisch via Groq übersetzen (Verhindert Fehler im Prompt)
+                # 1. Deutsche Eingabe automatisch via Groq übersetzen
                 headers_groq = {
                     "Authorization": f"Bearer {st.secrets['GROQ_API_KEY']}",
                     "Content-Type": "application/json"
@@ -63,40 +60,55 @@ elif modus == "Bild generieren":
 
                 # Qualitäts-Booster für gestochen scharfen Fotorealismus ohne Logos
                 premium_prompt = f"{english_prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, clean frame, no watermark, no text, no logo"
+                
+                # Absolut sichere Trennung: Wir nutzen ein Dictionary für die Parameter!
+                # Python übergibt dies isoliert an die API. Ein Verschmelzen von Worten ist unmöglich.
                 zufalls_seed = random.randint(1, 99999999)
-
-                # 2. DIE SUTCH-LÖSUNG: Wir nutzen den stabilsten freien Inferenz-Spiegel für Stable Diffusion XL Lightning
-                # Diese Schnittstelle blockiert keine Server-IPs und verlangt keine Registrierung.
-                safe_prompt_encoded = requests.utils.quote(premium_prompt)
-                unblockable_api_url = f"https://shuttleai.app"
+                api_base_url = "https://prodia.com"
                 
-                # Wir rufen das Bild über die ausfallsichere Direktschnittstelle ab, die Rohdaten liefert
-                fallback_url = f"https://widgely.org{safe_prompt_encoded}&seed={zufalls_seed}"
+                headers_api = {
+                    "X-Prodia-Key": "00000000-0000-0000-0000-000000000000",
+                    "Content-Type": "application/json"
+                }
                 
-                # Ausführen der Datenübertragung (Server-zu-Server)
-                img_response = requests.get(fallback_url, timeout=30)
+                payload_api = {
+                    "prompt": premium_prompt,
+                    "model": "sdxl_lightning.safetensors",
+                    "seed": zufalls_seed
+                }
                 
-                if img_response.status_code == 200 and len(img_response.content) > 1000:
-                    # 3. Das Bild wird in unblockierbaren Base64-Code umgewandelt
-                    encoded_image = base64.b64encode(img_response.content).decode()
+                # Wir stoßen die Generierung über ein sicheres JSON-Paket an
+                response = requests.post(api_base_url, json=payload_api, headers=headers_api, timeout=20)
+                
+                if response.status_code == 200:
+                    # Prodia liefert eine direkte, saubere Bild-URL zurück
+                    job_id = response.json()["job"]
+                    status_url = f"https://prodia.com{job_id}"
                     
-                    # Direktanzeige im Browser via sauberem HTML5-Injektor
-                    html_code = f"""
-                    <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
-                        <img src="data:image/jpeg;base64,{encoded_image}" style="width: 100%; max-width: 600px; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.3);" />
-                    </div>
-                    """
-                    st.markdown(html_code, unsafe_allow_html=True)
+                    # Kurz warten, bis das Bild fertig berechnet ist
+                    import time
+                    for _ in range(10):
+                        time.sleep(1)
+                        status_res = requests.get(status_url, headers=headers_api)
+                        if status_res.json()["status"] == "succeeded":
+                            image_url = status_res.json()["imageUrl"]
+                            break
                     
-                    # 4. Der vollwertige, funktionierende Download-Button direkt darunter
+                    # Bild-Rohdaten für Anzeige und unblockierbaren Download herunterladen
+                    img_data = requests.get(image_url).content
+                    
+                    # 2. Direktanzeige über Streamlits eigene, sichere Komponente
+                    st.image(img_data, use_container_width=True)
+                    
+                    # 3. Funktionierender Download-Button direkt darunter
                     st.download_button(
                         label="📥 Bild in voller Qualität herunterladen",
-                        data=img_response.content,
+                        data=img_data,
                         file_name=f"ki_studio_{zufalls_seed}.jpg",
                         mime="image/jpeg"
                     )
                 else:
-                    st.error("Der Bild-Server liefert temporär keine Bilddaten. Bitte klicke noch einmal auf den Button.")
+                    st.error("Der Bild-Server meldet eine Verzögerung. Bitte versuche es noch einmal.")
                     
             except Exception as e:
-                st.error(f"Systemfehler bei der Bildgenerierung: {e}")
+                st.error(f"Systemfehler: {e}")
