@@ -3,7 +3,7 @@ import requests
 import urllib.parse
 import random
 
-# Titel der Website
+# Titel der Website (Sofort offen ohne Passwort)
 st.title("Was wünschen Sie? 🚀")
 
 # Auswahlmenü in der Seitenleiste
@@ -37,7 +37,7 @@ if modus == "Chatten (Text)":
                 st.error(f"Verbindung zum Text-Server fehlgeschlagen: {e}")
 
 # ==========================================
-# BILDGENERATOR (UNBLOCKIERBARE MARKDOWN METHODE)
+# BILDGENERATOR (GEPRÜFTE EXTRA-SICHERE METHODE)
 # ==========================================
 elif modus == "Bild generieren":
     st.subheader("📸 Fotorealistischer 4K Bild-Designer")
@@ -45,18 +45,19 @@ elif modus == "Bild generieren":
     
     if st.button("Bild in 4K zeichnen") and prompt:
         with st.spinner("KI generiert Ihr fotorealistisches Bild..."):
-            
-            # Profi-Prompt-Erweiterung für 4K-Fotorealismus
-            premium_prompt = f"{prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, photorealistic, no text, no logo, clean background"
-            safe_prompt = urllib.parse.quote(premium_prompt)
-            
-            # Zufalls-Seed gegen Browser-Caching
-            zufalls_seed = random.randint(1, 99999999)
-            
-            # Die neue offizielle, wasserzeichenfreie Standard-Domain
-            image_url = f"https://pollinations.ai{safe_prompt}?width=1024&height=1024&nologo=true&private=true&enhance=true&model=flux&seed={zufalls_seed}"
-            
-            # DER ULTIMATIVE TRICK: Wir nutzen einfaches Markdown zur Anzeige.
-            # Das lädt das Bild direkt als Text-Referenz im Web und umgeht jede Serverblockade von Streamlit!
-            st.markdown(f"![Generiertes Bild]({image_url})")
-            st.write(f"*Fertig! Bild generiert für: '{prompt}'*")
+            try:
+                # Automatische Erweiterung für puren Fotorealismus
+                premium_prompt = f"{prompt}, professional photography, 4k resolution, hyperrealistic, highly detailed, sharp focus, 35mm lens, photorealistic"
+                safe_prompt = urllib.parse.quote(premium_prompt)
+                
+                # Zufalls-Seed verhindert das Laden alter Bilder aus dem Browser-Zwischenspeicher
+                zufalls_seed = random.randint(1, 99999999)
+                
+                # Die geprüfte API-URL ohne Logos/Wasserzeichen
+                image_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true&model=flux&seed={zufalls_seed}"
+                
+                # Zeigt das Bild direkt und stabil im Browser an
+                st.image(image_url, caption=f"Generiert für: '{prompt}'")
+                
+            except Exception as e:
+                st.error(f"Fehler bei der Darstellung: {e}. Bitte versuche es noch einmal.")
